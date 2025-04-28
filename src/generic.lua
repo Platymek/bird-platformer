@@ -31,12 +31,14 @@ local VelocitySystem = world.system({Position, Velocity}, function (entity, dt)
 end)
 
 
-local Gravity = world.component({strength = 16, lim = 16})
+local Gravity = world.component({strength = 16, lim = 16, scale = 1})
 
 local GravitySystem = world.system({Gravity, Velocity}, function (entity, dt)
 
     local gra = entity[Gravity]
-    local vel = entity[Velocity]
+    if gra.scale == 0 then return end
 
-    vel.y = math.moveToward(vel.y, gra.lim, gra.strength * dt)
+    local vel = entity[Velocity]
+    
+    vel.y = math.moveToward(vel.y, gra.lim * gra.scale, gra.strength * dt * gra.scale)
 end)

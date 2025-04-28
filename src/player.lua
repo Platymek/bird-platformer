@@ -1,16 +1,67 @@
 
+local Player = world.component({
 
-local Player = world.component({pnum = 0, state = 0, flapped = false})
+    -- player number, state and flap pressed
+    pnum = 0, state = 0, flapped = false,
+
+    -- time elapsed
+    charge = 0, attack = 0, stun = 0})
 --[[
 0 - idle
 1 - charge
 2 - attack
+3 - stun
+4 - repel
 ]]
 
 
 local function setState(ent, state)
 
-    ent[Player].state = state
+    local pla = ent[Player]
+    local gra = ent[Gravity]
+    local vel = ent[Velocity]
+
+    -- exit state
+    if      pla.state == 1 then 
+
+        gra.scale   = 1
+        pla.charge  = 0
+
+    elseif  pla.state == 2 then 
+
+        vel.y       = 0
+        gra.scale   = 1
+    end
+
+    pla.state = state
+
+    -- enter state
+    if      pla.state == 1 then
+
+        gra.scale   = config.p.charge.graScale
+
+    elseif  pla.state == 2 then
+
+        vel.x       = 0
+        vel.y       = -config.p.attack.speed
+        gra.scale   = 0
+        pla.attack  = 0
+    end
+end
+
+local function getPressure()
+
+    local pressure = 0
+    if btn(0) then pressure -= 1 end
+    if btn(1) then pressure += 1 end
+    return pressure
+end
+
+local function move(ent, pressure)
+
+    local vel = ent[Velocity]
+
+    vel.x = pressure * config.p.move.max
 end
 
 local function flap(ent)
@@ -19,16 +70,79 @@ local function flap(ent)
 
     if vel.y > config.p.flap.tolHalt then 
         
-        vel.y = 0
+        vel.y = -config.p.flap.halt
 
     else
-        local strong = vel.y < config.p.flap.tolWeak
+        local strong = vel.y < -config.p.flap.tolWeak
         vel.y = -config.p.flap.strength
 
         if strong then 
 
             vel.y *= config.p.flap.mult
         end
+    end
+end
+
+local function charge(ent, dt)
+
+    local pla = ent[Player]
+    move(ent, getPressure(), dt)
+
+    pla.charge += dt
+
+    if pla.state == 0 
+    and pla.charge > config.p.charge.toCharge then
+
+        setState(ent, 1)
+    end
+end
+
+local function idleState(ent, dt)
+    
+    local pla = ent[Player]
+    move(ent, getPressure(), dt)
+
+    if btn(4) then
+
+        if not pla.flapped then 
+
+            flap(ent)
+            pla.flapped = true
+        end
+
+        charge(ent, dt)
+
+    elseif pla.flapped then
+
+        pla.flapped = false
+        pla.charge = 0
+    end
+end
+
+local function chargeState(ent, dt)
+
+    local pla = ent[Player]
+
+    if btn(4) then charge(ent, dt) 
+    else
+        if pla.charge > config.p.charge.toAttack then
+
+            setState(ent, 2)
+        else
+            setState(ent, 0)
+        end
+    end
+end
+
+local function attackState(ent, dt)
+
+    local pla = ent[Player]
+
+    if pla.attack > config.p.attack.time then
+
+        setState(ent, 0)
+    else
+        pla.attack += dt
     end
 end
 
@@ -51,27 +165,13 @@ function createPlayerEntity(world, x, y)
 end
 
 
-local PlayerSystem = world.system({Player}, function (ent)
+local PlayerSystem = world.system({Player}, function (ent, dt)
 
     local pla = ent[Player]
     local vel = ent[Velocity]
 
-    vel.x = 0
-
-    if btn(0) then vel.x -= config.p.move.max end
-    if btn(1) then vel.x += config.p.move.max end
-
-    if pla.state == 0 then
-
-        if btn(4) then
-
-            if not pla.flapped then 
-
-                flap(ent)
-                pla.flapped = true
-            end
-        else
-            pla.flapped = false
-        end
-    end
+    -- states
+    if pla.state == 0 then idleState(ent, dt)   end
+    if pla.state == 1 then chargeState(ent, dt) end
+    if pla.state == 2 then attackState(ent, dt) end
 end)

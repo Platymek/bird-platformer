@@ -11,14 +11,13 @@ __lua__
 function _init()
     
     dt = 1/60
-    lasttime = time()
     
     player = createPlayerEntity(world, 16, 16)
 end
 
 function _update60()
 
-    PlayerSystem()
+    PlayerSystem(dt)
     VelocitySystem(dt)
     GravitySystem(dt)
 end
@@ -27,7 +26,7 @@ function _draw()
     
     cls()
     SpriteSystem()
-    print(player[Velocity].y)
+    print(player[Player].charge)
 end
 
 __gfx__
