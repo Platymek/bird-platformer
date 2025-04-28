@@ -37,7 +37,7 @@ config = {
             distance = 8 * 12,
         },
 
-        stunDur = 1,
+        stunDur = 0.5,
 
         terminal = 64,
     }

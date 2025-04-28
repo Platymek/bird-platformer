@@ -31,6 +31,11 @@ local function setState(ent, state)
 
         vel.y       = 0
         gra.scale   = 1
+
+    elseif  pla.state == 3 then 
+
+        vel.y       = 0
+        gra.scale   = 1
     end
 
     pla.state = state
@@ -46,6 +51,12 @@ local function setState(ent, state)
         vel.y       = -config.p.attack.speed
         gra.scale   = 0
         pla.attack  = 0
+
+    elseif  pla.state == 3 then
+
+        pla.stun    = 0
+        vel.y       = 0
+        gra.scale   = 0
     end
 end
 
@@ -97,7 +108,9 @@ local function charge(ent, dt)
     end
 end
 
-local function idleState(ent, dt)
+local states = {}
+
+states.idle = function (ent, dt)
     
     local pla = ent[Player]
     move(ent, getPressure(), dt)
@@ -119,7 +132,7 @@ local function idleState(ent, dt)
     end
 end
 
-local function chargeState(ent, dt)
+states.charge = function (ent, dt)
 
     local pla = ent[Player]
 
@@ -134,16 +147,29 @@ local function chargeState(ent, dt)
     end
 end
 
-local function attackState(ent, dt)
+states.attack = function (ent, dt)
 
     local pla = ent[Player]
 
     if pla.attack > config.p.attack.time then
 
-        setState(ent, 0)
+        setState(ent, 3)
     else
         pla.attack += dt
     end
+end
+
+states.stun = function (ent, dt)
+
+    local pla = ent[Player]
+
+    if pla.stun > config.p.stunDur then
+
+        setState(ent, 0)
+    else 
+        pla.stun += dt 
+    end
+
 end
 
 
@@ -171,7 +197,9 @@ local PlayerSystem = world.system({Player}, function (ent, dt)
     local vel = ent[Velocity]
 
     -- states
-    if pla.state == 0 then idleState(ent, dt)   end
-    if pla.state == 1 then chargeState(ent, dt) end
-    if pla.state == 2 then attackState(ent, dt) end
+    if      pla.state == 0  then states.idle  (ent, dt) 
+    elseif  pla.state == 1  then states.charge(ent, dt) 
+    elseif  pla.state == 2  then states.attack(ent, dt) 
+    elseif  pla.state == 3  then states.stun  (ent, dt) 
+    end
 end)
