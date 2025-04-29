@@ -182,6 +182,7 @@ function createPlayerEntity(world, x, y)
     player += Position({x = x, y = y})
     player += Velocity()
     player += Gravity({strength = config.grav, lim = config.p.terminal})
+    player += Collision({x = 1, y = 2, w = 6, h = 6})
 
     player += Sprite({index = 1})
 

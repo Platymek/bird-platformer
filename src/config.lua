@@ -7,7 +7,7 @@ config = {
 
         flap = {
 
-            tolWeak = 64 * 0.75,
+            tolWeak = 64 * 0.6,
             tolHalt = 999, 
     
             halt = 16,
