@@ -169,7 +169,6 @@ states.stun = function (ent, dt)
     else 
         pla.stun += dt 
     end
-
 end
 
 
@@ -182,8 +181,12 @@ function createPlayerEntity(world, x, y)
     player += Position({x = x, y = y})
     player += Velocity()
     player += Gravity({strength = config.grav, lim = config.p.terminal})
-    player += Collision({x = 1, y = 2, w = 6, h = 6})
 
+
+    local box = Rect:new(-3, -2, 6, 6)
+
+    player += Collision({x = -3, y = -2, w = 6, h = 6})
+    player += Hurtbox({rect = box})
     player += Sprite({index = 1})
 
     setState(player, 0)

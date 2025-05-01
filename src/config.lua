@@ -2,45 +2,58 @@
 config = {
 
     grav = 128,
+}
 
-    p = {
+-- player
+config.p = {
 
-        flap = {
+    flap = {
 
-            tolWeak = 64 * 0.6,
-            tolHalt = 999, 
-    
-            halt = 16,
-            strength = 64,
-            mult = 2,
-        },
+        tolWeak = 64 * 0.6,
+        tolHalt = 999, 
 
-        move = {
+        halt = 16,
+        strength = 64,
+        mult = 2,
+    },
 
-            max = 64,
-        },
+    move = {
 
-        charge = {
+        max = 64,
+    },
 
-            -- charge time to
-            toCharge = 0.2,
-            toAttack = 0.6,
-            buffer = 0.2,
-            
-            -- gravity scale while charging
-            graScale = 2.5,
-        },
+    charge = {
 
-        attack = {
+        -- charge time to
+        toCharge = 0.2,
+        toAttack = 0.6,
+        buffer = 0.2,
+        
+        -- gravity scale while charging
+        graScale = 2.5,
+    },
 
-            speed = 64 * 3,
-            distance = 8 * 12,
-        },
+    attack = {
 
-        stunDur = 0.5,
+        speed = 64 * 3,
+        distance = 8 * 12,
+    },
 
-        terminal = 64,
-    }
+    stunDur = 0.5,
+
+    terminal = 64,
+}
+
+config.debug = {
+
+    drawColl = false,
+    drawHurt = true,
+    drawHit  = true,
+}
+
+config.c = {
+
+    offset = 0
 }
 
 -- post init
