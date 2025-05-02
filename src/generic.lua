@@ -52,19 +52,22 @@ function (entity)
     end
 end)
 
+local function DrawRects(world, component, color)
+
+    local q = world.query({Position, component})
+
+    for _, ent in pairs(q) do
+
+        local pos = ent[Position]
+
+        ent[component].rect:draw(pos.x, pos.y, color)
+    end
+end
+
 
 -- physics --
 
 local Collision = world.component({rect = Rect:new(-4, -4, 8, 8)})
-
-local DrawCollision = world.system({Position, Collision}, 
-function (ent, color)
-
-    local pos = ent[Position]
-
-    ent[Collision].rect:draw(pos.x, pos.y, color)
-end
-)
 
 local isPointInCollision =
 function (world, x, y, ent)
@@ -219,26 +222,13 @@ end)
 local Hitbox  = world.component({team = nil, rect = Rect:new(-4, -4, 8, 8), onHit  = nil})
 local Hurtbox = world.component({team = nil, rect = Rect:new(-4, -4, 8, 8), onHurt = nil})
 
-local DrawHitboxes = world.system({Position, Hitbox}, 
-function (ent, color)
-
-    local pos = ent[Position]
-
-    ent[Hitbox].rect:draw(pos.x, pos.y, color)
-end)
-
-local DrawHurtboxes = world.system({Position, Hurtbox}, 
-function (ent, color)
-
-    local pos = ent[Position]
-
-    ent[Hurtbox].rect:draw(pos.x, pos.y, color)
-end)
-
 local HurtboxSystem = world.system({Hurtbox, Position},
 function (ent)
     
     local hitEntities = world.query({Hitbox, Position})
+
+    local hurt = ent[Hurtbox]
+    local hurtPos = ent[Position]
 
     for _, hitEnt in pairs(hitEntities) do
         
@@ -246,9 +236,6 @@ function (ent)
 
             local hit  = hitEnt[Hitbox]
             local hitPos = hitEnt[Position]
-
-            local hurt = ent[Hurtbox]
-            local hurtPos = ent[Position]
 
             if hit.team != hurt.team then
 
@@ -283,4 +270,35 @@ function (ent)
     if del.onDelete then del.onDelete() end
 
     world.queue(deleteEntity(world, ent))
+end)
+
+
+-- collection --
+
+-- onCollect function: me, you
+local Collector   = world.component({rect = Rect:new(-4, -4, 8, 8), onCollect = nil})
+local Collectable = world.component({rect = Rect:new(-4, -4, 8, 8), onCollect = nil})
+
+local CollectionSystem = world.system({Position, Collector},
+function (ent)
+
+    local colr = ent[Collector]
+    local pos  = ent[Position]
+    local colbleEnts = world.query({Position, Collectable})
+
+    for _, colbleEnt in pairs(colbleEnts) do
+
+        colble      = colbleEnt[Collectable]
+        colblePos   = colbleEnt[Position]
+
+        -- if overlapping
+        if colr.rect
+        :getOffset(pos.x, pos.y)
+        :isOverlapping(colble.rect
+        :getOffset(colblePos.x, colblePos.y))
+        then
+            if colr  .onCollect then colr  .onCollect(ent, colbleEnt) end
+            if colble.onCollect then colble.onCollect(colbleEnt, ent) end
+        end
+    end
 end)

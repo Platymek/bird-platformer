@@ -47,8 +47,10 @@ config.p = {
 config.debug = {
 
     drawColl = false,
-    drawHurt = true,
-    drawHit  = true,
+    drawHurt = false,
+    drawHit  = false,
+    drawColr = true,
+    drawColb = true,
 }
 
 config.c = {

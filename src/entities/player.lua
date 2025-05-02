@@ -191,6 +191,7 @@ function createPlayerEntity(world, x, y)
     player += Collision({rect = box})
     player += Hurtbox({team = 1, rect = box})
     player += Sprite({spr = Spr:new(1)})
+    player += Collector()
 
     setState(player, 0)
 
