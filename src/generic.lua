@@ -6,7 +6,28 @@ local Position = world.component({x = 0, y = 0})
 
 -- sprites --
 
-local Sprite = world.component({index = 0, offx = -4, offy = -4})
+Spr = {}
+
+Spr.new = 
+function (self, index, x, y, w, h, flip_x, flip_y)
+    
+    local s = {
+        index = index, x = x or -4, y = y or -4, w = w or 1, h = h or 1, 
+        flip_x = flip_x or false, flip_y = flip_y or false}
+
+    setmetatable(s, self)
+    self.__index = self
+    return s
+end
+
+Spr.draw =
+function (self, x, y)
+
+    spr(self.index, self.x + x, self.y + y, 
+    self.w, self.h, self.flip_x, self.flip_y)
+end
+
+local Sprite = world.component({spr = Spr:new(0, -4, -4)})
 
 local SpriteSystem = world.system({Position, Sprite}, 
 function (entity)
@@ -14,46 +35,78 @@ function (entity)
     local pos = entity[Position]
     local sprite = entity[Sprite]
 
-    spr(sprite.index, pos.x + sprite.offx, pos.y + sprite.offy)
+    sprite.spr:draw(pos.x, pos.y)
+end)
+
+local SpriteGroup = world.component({sprs = {}})
+
+local SpriteGroupSystem = world.system({Position, SpriteGroup}, 
+function (entity)
+    
+    local pos = entity[Position]
+    local spg = entity[SpriteGroup]
+
+    for _, sprite in pairs(spg.sprs) do
+    
+        sprite:draw(pos.x, pos.y) 
+    end
 end)
 
 
 -- physics --
 
-local Collision = world.component({x = 0, y = 0, w = 8, h = 8})
+local Collision = world.component({rect = Rect:new(-4, -4, 8, 8)})
 
 local DrawCollision = world.system({Position, Collision}, 
 function (ent, color)
 
     local pos = ent[Position]
-    local col = ent[Collision]
 
-    local x = pos.x + col.x
-    local y = pos.y + col.y
-
-    rect(x, y, x + col.w - 1, y + col.h - 1)
+    ent[Collision].rect:draw(pos.x, pos.y, color)
 end
 )
+
+local isPointInCollision =
+function (world, x, y, ent)
+
+    local colEntities = world.query({Collision, Position})
+    
+    for _, colEnt in pairs(colEntities) do
+
+        if ent ~= colEnt and ent ~= nil then 
+
+            local pos = colEnt[Position]
+            
+            if colEnt[Collision].rect
+                :getOffset      (pos.x, pos.y)
+                :isPointInRect  (x, y)
+
+            then return true end
+        end
+    end
+
+    return false
+end
 
 
 local Velocity = world.component({x = 0, y = 0, onFloor = false })
 
-local function movex(col, pos, newPos, isSolidFunc)
+local function movex(ent, col, pos, newPos, isSolidFunc)
 
     if flr(pos.x) ~= flr(newPos.x) then
 
-        local y1 = pos.y + col.y
-        local y2 = y1 + col.h - 1
+        local y1 = pos.y + col.rect.y
+        local y2 = y1 + col.rect.h - 1
         
-        local x = newPos.x + col.x
+        local x = newPos.x + col.rect.x
 
         if pos.x < newPos.x then
 
-            x += col.w - 1
+            x += col.rect.w - 1
         end
         
-        if isSolidFunc(x, y1)
-        or isSolidFunc(x, y2) then
+        if isSolidFunc(x, y1, ent)
+        or isSolidFunc(x, y2, ent) then
             
             return pos.x
         end
@@ -62,23 +115,23 @@ local function movex(col, pos, newPos, isSolidFunc)
     return newPos.x
 end
 
-local function movey(col, pos, newPos, isSolidFunc)
+local function movey(ent, col, pos, newPos, isSolidFunc)
 
     if flr(pos.y) ~= flr(newPos.y) then
 
-        local x1 = pos.x + col.x
-        local x2 = x1 + col.w - 1
+        local x1 = pos.x + col.rect.x
+        local x2 = x1 + col.rect.w - 1
         
-        local y = newPos.y + col.y
+        local y = newPos.y + col.rect.y
         local falling = pos.y < newPos.y
 
         if falling then
 
-            y += col.h - 1
+            y += col.rect.h - 1
         end
         
-        if isSolidFunc(x1, y, falling)
-        or isSolidFunc(x2, y, falling) then
+        if isSolidFunc(x1, y, ent, falling)
+        or isSolidFunc(x2, y, ent, falling) then
             
             return pos.y
         end
@@ -106,7 +159,7 @@ function (entity, dt, isSolidFunc)
     else
         if vel.x ~= 0 then
 
-            local nx = movex(col, pos, newPos, isSolidFunc)
+            local nx = movex(entity, col, pos, newPos, isSolidFunc)
             
             if pos.x == nx then
 
@@ -118,7 +171,7 @@ function (entity, dt, isSolidFunc)
 
         if vel.y ~= 0 then
 
-            local ny = movey(col, pos, newPos, isSolidFunc)
+            local ny = movey(entity, col, pos, newPos, isSolidFunc)
 
             if pos.y == ny then
 
@@ -147,29 +200,6 @@ function (entity, dt)
 end)
 
 -- camera --
-
---[[
-local Camera = world.component({maxSpeed = 16, offx = 0, offy = 0, x = 0, y = 0 })
-
-local CameraSystem = world.system({Camera, Position},
-function (ent, dt)
-    
-    local cam = ent[Camera]
-    local pos = ent[Position]
-
-    local function ease(c, p, ms)
-    
-        return math.moveToward(c, p, 
-        -- slow with distance to entity, if it's smaller than max speed
-            min(abs(c - p), ms))
-    end
-
-    cam.x = ease(cam.x, pos.x, cam.maxSpeed)
-    cam.y = ease(cam.y, pos.y, cam.maxSpeed)
-
-    camera
-end)
-]]
 
 local Camera = world.component({offx = 0, offy = 0})
 
@@ -228,8 +258,8 @@ function (ent)
                 :isOverlapping(hurt.rect
                 :getOffset(hurtPos.x, hurtPos.y))
                 then
-                    if hurt.onHurt then hit.onHurt(hitEnt, ent) end
-                    if hit .onHit  then hit.onHit (hitEnt, ent) end
+                    if hurt.onHurt then hurt.onHurt(ent, hitEnt) end
+                    if hit .onHit  then hit .onHit (hitEnt, ent) end
                 end
             end
         end

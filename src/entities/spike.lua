@@ -13,7 +13,7 @@ function createSpikeEntity(world, x, y)
         rect = Rect:new(-2, -2, 4, 4),
         onHit = onHit})
 
-    spike += Sprite({index = 3})
+    spike += Sprite({spr = Spr:new(3)})
     spike += Position({x = x, y = y})
 
     return spike

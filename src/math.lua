@@ -1,14 +1,16 @@
 
 math = {}
 
-math.moveToward = function(from, to, delta)
+math.moveToward = 
+function(from, to, delta)
 
     if abs(to - from) <= delta then return to end
     return from + sgn(to - from) * delta
 end
 
 -- rectangle a and b
-math.isRectsOverlapping = function (
+math.isRectsOverlapping = 
+function (
     ax1, ay1, ax2, ay2,
     bx1, by1, bx2, by2)
 
@@ -18,6 +20,16 @@ math.isRectsOverlapping = function (
 
     -- Otherwise, they must be overlapping
     return true
+end
+
+math.isPointInArea = 
+function (ax1, ay1, ax2, ay2, x, y)
+
+    return
+        x >= ax1
+    and x <= ax2
+    and y >= ay1
+    and y <= ay2
 end
 
 math.lerp = function (a, b, speed)
@@ -53,6 +65,16 @@ Rect.getOffset =
 function (self, x, y)
 
     return Rect:new(self.x + x, self.y + y, self.w, self.h)
+end
+
+Rect.isPointInRect =
+function (self, x, y)
+    
+    return math.isPointInArea(
+
+        self.x, self.y, self.x + self.w, self.y + self.h,
+        x, y
+    )
 end
 
 Rect.draw =

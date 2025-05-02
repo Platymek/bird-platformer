@@ -31,6 +31,7 @@ local function setState(ent, state)
 
         vel.y       = 0
         gra.scale   = 1
+        ent -= Hitbox
 
     elseif  pla.state == 3 then 
 
@@ -51,6 +52,8 @@ local function setState(ent, state)
         vel.y       = -config.p.attack.speed
         gra.scale   = 0
         pla.attack  = 0
+
+        ent += Hitbox({team = 1, rect = Rect:new(-4, -6, 8, 4)})
 
     elseif  pla.state == 3 then
 
@@ -185,9 +188,9 @@ function createPlayerEntity(world, x, y)
 
     local box = Rect:new(-3, -2, 6, 6)
 
-    player += Collision({x = -3, y = -2, w = 6, h = 6})
-    player += Hurtbox({rect = box})
-    player += Sprite({index = 1})
+    player += Collision({rect = box})
+    player += Hurtbox({team = 1, rect = box})
+    player += Sprite({spr = Spr:new(1)})
 
     setState(player, 0)
 
